@@ -1,0 +1,5 @@
+Configuration,SVM kernel,No. of features,Accuracy,Precision,Recall,F1,True stable,False unstable,False stable,True unstable,Train time (s),Predict time (s)
+SVM - without PCA,poly,12,0.9786,0.9845,0.9818,0.9832,4226,118,139,7517,21.7618,0.3302
+SVM - with PCA,poly,11,0.9786,0.9845,0.9818,0.9832,4226,118,139,7517,22.058,0.3025
+k-NN - without PCA,Not applicable,12,0.9179,0.9022,0.9773,0.9382,3533,811,174,7482,0.0533,11.2564
+k-NN - with PCA,Not applicable,11,0.9044,0.887,0.9743,0.9286,3394,950,197,7459,0.0533,9.1771
