@@ -39,14 +39,20 @@ def main():
     n_comp, n_features = data["n_comp"], data["n_features"]
 
     # 1. k-NN hyperparameter sweep
-    knn_pipeline = Pipeline([
-        ("sc", StandardScaler()),
-        ("knn", KNeighborsClassifier()),
-    ])
+    knn_pipeline = Pipeline(
+        [
+            ("sc", StandardScaler()),
+            ("knn", KNeighborsClassifier()),
+        ]
+    )
 
     knn_grid = GridSearchCV(
         estimator=knn_pipeline,
-        param_grid={"knn__n_neighbors": K_VALUES, "knn__metric": KNN_METRICS, "knn__weights": KNN_WEIGHTS,},
+        param_grid={
+            "knn__n_neighbors": K_VALUES,
+            "knn__metric": KNN_METRICS,
+            "knn__weights": KNN_WEIGHTS,
+        },
         cv=CV,
         scoring="f1",
         n_jobs=N_JOBS,
@@ -74,11 +80,20 @@ def main():
 
     for metric in KNN_METRICS:
         for weights in KNN_WEIGHTS:
-            sub = knn_results[(knn_results["param_knn__metric"] == metric) & (knn_results["param_knn__weights"] == weights)].copy()
+            sub = knn_results[
+                (knn_results["param_knn__metric"] == metric)
+                & (knn_results["param_knn__weights"] == weights)
+            ].copy()
             sub["k"] = sub["param_knn__n_neighbors"].astype(int)
             sub = sub.sort_values("k")
             ls, mk = styles[(metric, weights)]
-            plt.plot(sub["k"], sub["mean_test_score"], marker=mk, linestyle=ls, label=f"{metric}, {weights}")
+            plt.plot(
+                sub["k"],
+                sub["mean_test_score"],
+                marker=mk,
+                linestyle=ls,
+                label=f"{metric}, {weights}",
+            )
 
     plt.xlabel("Number of neighbours, k")
     plt.ylabel("Mean cross-validation F1")
@@ -91,35 +106,48 @@ def main():
     # 2. CV stability on full training set
     evaluate_cv(
         make_model(KNeighborsClassifier(**best_knn_params), False, n_comp),
-        X_train, y_train, "Selected k-NN (without PCA)",
+        X_train,
+        y_train,
+        "Selected k-NN (without PCA)",
     )
     evaluate_cv(
         make_model(KNeighborsClassifier(**best_knn_params), True, n_comp),
-        X_train, y_train, "Selected k-NN (with PCA)",
+        X_train,
+        y_train,
+        "Selected k-NN (with PCA)",
     )
 
     # 3. PCA component sweep for k-NN
     comp_values = list(range(1, n_features + 1))
     means, stds = [], []
     for k_comp in comp_values:
-        pipe = Pipeline([
-            ("sc", StandardScaler()),
-            ("pca", PCA(n_components=k_comp, random_state=SEED)),
-            ("clf", KNeighborsClassifier(**best_knn_params)),
-        ])
+        pipe = Pipeline(
+            [
+                ("sc", StandardScaler()),
+                ("pca", PCA(n_components=k_comp, random_state=SEED)),
+                ("clf", KNeighborsClassifier(**best_knn_params)),
+            ]
+        )
         sc = cross_val_score(pipe, X_sw, y_sw, cv=CV, scoring="f1", n_jobs=N_JOBS)
         means.append(sc.mean())
         stds.append(sc.std())
 
-    pd.DataFrame({
-        "PCA components": comp_values,
-        "k-NN mean CV F1": means,
-        "k-NN CV F1 std": stds,
-    }).to_csv("knn_pca_component_sweep.csv", index=False)
+    pd.DataFrame(
+        {
+            "PCA components": comp_values,
+            "k-NN mean CV F1": means,
+            "k-NN CV F1 std": stds,
+        }
+    ).to_csv("knn_pca_component_sweep.csv", index=False)
 
     plt.figure(figsize=(9, 5))
     plt.plot(comp_values, means, "s-", markersize=4, label="k-NN")
-    plt.axvline(n_comp, linestyle="--", color="gray", label=f"{PCA_VARIANCE_THRESHOLD * 100:.0f}% variance ({n_comp})")
+    plt.axvline(
+        n_comp,
+        linestyle="--",
+        color="gray",
+        label=f"{PCA_VARIANCE_THRESHOLD * 100:.0f}% variance ({n_comp})",
+    )
     plt.xticks(np.arange(1, n_features + 1, 2))
     plt.xlabel("Number of PCA components")
     plt.ylabel("Mean cross-validation F1")
@@ -130,12 +158,21 @@ def main():
 
     # 4. Final test-set comparison: without PCA vs. with PCA
     configs = {
-        "k-NN - without PCA": make_model(KNeighborsClassifier(**best_knn_params), False, n_comp),
-        "k-NN - with PCA": make_model(KNeighborsClassifier(**best_knn_params), True, n_comp),
+        "k-NN - without PCA": make_model(
+            KNeighborsClassifier(**best_knn_params), False, n_comp
+        ),
+        "k-NN - with PCA": make_model(
+            KNeighborsClassifier(**best_knn_params), True, n_comp
+        ),
     }
     evaluate_pca_vs_non_pca(
-        configs, X_train, X_test, y_train, y_test,
-        n_comp, n_features,
+        configs,
+        X_train,
+        X_test,
+        y_train,
+        y_test,
+        n_comp,
+        n_features,
         cm_filename="knn_confusion_matrices.png",
         summary_prefix="knn",
     )
@@ -143,3 +180,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
