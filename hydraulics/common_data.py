@@ -22,6 +22,9 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
 )
 
+from typing import Any
+
+
 DATA_DIR = "."
 
 SENSOR_NAMES = [
@@ -57,7 +60,7 @@ def remove_prefix(parameters, prefix):
 
 
 def make_model(classifier, use_pca, n_components):
-    steps = [("sc", StandardScaler())]
+    steps: list[tuple[str, Any]] = [("sc", StandardScaler())]
     if use_pca:
         steps.append(("pca", PCA(n_components=n_components, random_state=SEED)))
     steps.append(("clf", classifier))
